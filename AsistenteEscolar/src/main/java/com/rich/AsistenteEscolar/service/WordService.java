@@ -7,76 +7,57 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.rich.AsistenteEscolar.service.utils.JsonUtils;
+import com.rich.AsistenteEscolar.service.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import java.io.FileOutputStream;
+import java.io.File;
 
 @Service
 public class WordService {
 	
 	@Autowired
-    JsonUtils jsonUtils;
+    Utils utils;
 
-    public byte[] generateWordFile(ResponseEntity<String> responseEntity) throws IOException {
-        String responseBody = jsonUtils.extractContentFromResponse(responseEntity.getBody());
-
+	public byte[] generateWordFile(String markdownString) throws Exception {
         XWPFDocument document = new XWPFDocument();
-        XWPFParagraph paragraph = document.createParagraph();
-        XWPFRun run = paragraph.createRun();
-
-        int listNumber = 0;
-
-        // Handle Markdown formatting
-        Pattern pattern = Pattern.compile("(\\*\\*|\\*|##|#|\\-|\\d+\\.|`)");
-        Matcher matcher = pattern.matcher(responseBody);
-        int lastEnd = 0;
-
-        while (matcher.find()) {
-            String before = responseBody.substring(lastEnd, matcher.start());
-            String markdown = matcher.group(1);
-            run.setText(before);
-
-            run = paragraph.createRun();
-
-            switch (markdown) {
-                case "#":
-                    run.setBold(true);
-                    run.setFontSize(24);
-                    break;
-                case "##":
-                    run.setBold(true);
-                    run.setFontSize(18);
-                    break;
-                case "**":
-                    run.setBold(true);
-                    break;
-                case "*":
-                    run.setItalic(true);
-                    break;
-                case "-":
-                    run.setText("• ");
-                    break;
-                case "`":
-                    run.setFontFamily("Courier New");
-                    break;
-                default: // For ordered list
-                    listNumber++;
-                    run.setText(listNumber + ". ");
-                    break;
+        
+        String[] lines = markdownString.split("\n");
+        
+        for (String line : lines) {
+            XWPFParagraph paragraph = document.createParagraph();
+            XWPFRun run = paragraph.createRun();
+            
+            if (line.startsWith("# ")) {
+                paragraph.setStyle("Heading 1");
+                run.setText(line.substring(2));
+            } else if (line.startsWith("## ")) {
+                paragraph.setStyle("Heading 2");
+                run.setText(line.substring(3));
+            } else if (line.startsWith("### ")) {
+                paragraph.setStyle("Heading 3");
+                run.setText(line.substring(4));
+            } else if (line.startsWith("- ")) {
+                paragraph.setStyle("ListBullet");
+                run.setText(line.substring(2));
+            } else if (line.startsWith("1. ")) {
+                paragraph.setStyle("ListNumber");
+                run.setText(line.substring(3));
+            } else {
+                run.setText(line);
             }
-
-            lastEnd = matcher.end();
         }
-
-        String after = responseBody.substring(lastEnd);
-        run.setText(after);
-
+        
+        // Save the document to a byte array
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         document.write(byteArrayOutputStream);
-
+        
         return byteArrayOutputStream.toByteArray();
     }
+
 }

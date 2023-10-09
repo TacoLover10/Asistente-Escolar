@@ -19,9 +19,12 @@ public class AsistenteController {
 	ChatGPTService chatGPTService;
 	
 	 @PostMapping(value ="/api/generateFile", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-	 public void postString(@RequestBody String prompt, HttpServletResponse response) {
+	 public void postString(@RequestBody String prompt, HttpServletResponse response) throws Exception {
+		 
+	        chatGPTService.getResponseFromGPT(prompt, response);
+
 		 
 	        // perform some operation with myString
-	        chatGPTService.getResponseFromGPT(prompt, response);
+	       // chatGPTService.getResponseFromGPT(prompt, response);
 	    }
 }

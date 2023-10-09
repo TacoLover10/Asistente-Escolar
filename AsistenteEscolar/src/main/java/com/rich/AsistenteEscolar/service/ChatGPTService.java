@@ -4,6 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
+import com.aspose.cells.SaveFormat;
+import com.aspose.cells.VbaModule;
+import com.aspose.cells.VbaModuleCollection;
+import com.aspose.cells.Workbook;
+ 
+
+import com.jacob.activeX.ActiveXComponent;
+import com.jacob.com.ComFailException;
+import com.jacob.com.Dispatch;
+import com.jacob.com.Variant;
+
+
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -31,7 +43,7 @@ public class ChatGPTService {
 	    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
 	    private static final String API_KEY = "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"; // replace with your actual OpenAI API key
 
-	    public void getResponseFromGPT(String messageContent, HttpServletResponse servletResponse) {
+	    public void getResponseFromGPT(String messageContent, HttpServletResponse servletResponse) throws Exception {
 	        RestTemplate restTemplate = new RestTemplate();
 
 	        // Create headers
@@ -57,19 +69,16 @@ public class ChatGPTService {
 	        System.err.println("response->" + response.toString());
 	        
 	        //Create the powerpoint presentation
-	        if(messageContent.contains("esay")) {
-	        	generateWordDoc(response, servletResponse);
-	        	
-	        } else if(messageContent.contains("presentacion")){
-	        	generatePresentation(response, servletResponse);
-	        }
+	        createWithVba(response.getBody().toString(), servletResponse);
+	        
 
 
 	    }
 
-		private void generateWordDoc(ResponseEntity<String> response, HttpServletResponse servletResponse) {
+		private void generateWordDoc(ResponseEntity<String> response, HttpServletResponse servletResponse) throws Exception {
 			try {
-      		  byte[] wordFileContent = wordService.generateWordFile(response);
+      		  byte[] wordFileContent = wordService.generateWordFile(response.getBody().toString());
+      		  
       		  
       		  servletResponse.setHeader("Content-Disposition", "attachment; filename=generated.docx");
                 OutputStream outputStream = servletResponse.getOutputStream();
@@ -107,9 +116,28 @@ public class ChatGPTService {
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
-			
+				}//C:\\Users\\ricardo.regalado\\Desktop\\slide2.pptm			
 		}
 
+		public void createWithVba(String Code, HttpServletResponse servletResponse) throws Exception {
+			  // Instantiate a new Workbook
+			Workbook workbook = new Workbook("Libro1.xlsm");
 
+			// Cambiar el código del módulo VBA
+			VbaModuleCollection modules = workbook.getVbaProject().getModules();
+
+			for (int i = 0; i < modules.getCount(); i++) {
+				VbaModule module = modules.get(i);
+				String code = Code;
+					module.setCodes(code);
+				
+			}
+			// Set the necessary response headers
+		    servletResponse.setContentType("application/vnd.ms-excel.sheet.macroEnabled.12");  // for .xlsm files
+		    servletResponse.setHeader("Content-Disposition", "attachment; filename=output.xlsm");
+		    
+		    // Write the workbook to the servlet response's output stream
+		    workbook.save(servletResponse.getOutputStream(), SaveFormat.XLSM);
+		}
+	        
 }

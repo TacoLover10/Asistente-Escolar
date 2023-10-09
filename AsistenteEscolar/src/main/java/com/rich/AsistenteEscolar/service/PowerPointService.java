@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rich.AsistenteEscolar.service.utils.JsonUtils;
+import com.rich.AsistenteEscolar.service.utils.Utils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,7 +17,7 @@ import java.util.List;
 public class PowerPointService {
 	
 	@Autowired
-	JsonUtils jsonUtils;
+	Utils jsonUtils;
 
     public void createPowerPointFromResponse(ResponseEntity<String> response) throws IOException {
         String responseBody = jsonUtils.extractContentFromResponse(response.getBody());
